@@ -1,29 +1,31 @@
-#!/usr/bin/with-contenv bashio
-
+#!/bin/bash
 set -e
 
-DATABASE=$(bashio::config 'database')
-USERNAME=$(bashio::config 'username')
-PASSWORD=$(bashio::config 'password')
-POSTGRES_PASSWORD=$(bashio::config 'postgres_password')
-EXTERNAL_ACCESS=$(bashio::config 'external_access')
-EXTERNAL_SUBNET=$(bashio::config 'external_subnet')
-MAX_CONNECTIONS=$(bashio::config 'max_connections')
-SHARED_BUFFERS=$(bashio::config 'shared_buffers')
+OPTIONS=/data/options.json
+
+DATABASE=$(jq -r '.database' "$OPTIONS")
+USERNAME=$(jq -r '.username' "$OPTIONS")
+PASSWORD=$(jq -r '.password' "$OPTIONS")
+POSTGRES_PASSWORD=$(jq -r '.postgres_password' "$OPTIONS")
+EXTERNAL_ACCESS=$(jq -r '.external_access' "$OPTIONS")
+EXTERNAL_SUBNET=$(jq -r '.external_subnet' "$OPTIONS")
+MAX_CONNECTIONS=$(jq -r '.max_connections' "$OPTIONS")
+SHARED_BUFFERS=$(jq -r '.shared_buffers' "$OPTIONS")
 
 PGDATA="/data/postgresql"
-
 export PGDATA
 export PATH="/usr/bin:$PATH"
 
+echo "[postgres] Starting..."
+
 if [ ! -f "$PGDATA/PG_VERSION" ]; then
-    bashio::log.info "Initializing PostgreSQL data directory..."
+    echo "[postgres] Initializing data directory..."
     mkdir -p "$PGDATA"
     chown postgres:postgres "$PGDATA"
     su postgres -c "initdb -D \"$PGDATA\""
 fi
 
-bashio::log.info "Configuring postgresql.conf..."
+echo "[postgres] Writing postgresql.conf..."
 cat > "$PGDATA/postgresql.conf" <<EOF
 listen_addresses = '*'
 port = 5432
@@ -42,9 +44,9 @@ lc_time = 'en_US.UTF-8'
 default_text_search_config = 'pg_catalog.english'
 EOF
 
-bashio::log.info "Configuring pg_hba.conf..."
-if bashio::var.true "$EXTERNAL_ACCESS"; then
-    bashio::log.info "External access enabled — allowing connections from ${EXTERNAL_SUBNET}"
+echo "[postgres] Writing pg_hba.conf..."
+if [ "$EXTERNAL_ACCESS" = "true" ]; then
+    echo "[postgres] External access enabled — subnet: ${EXTERNAL_SUBNET}"
     cat > "$PGDATA/pg_hba.conf" <<EOF
 local   all             all                                     trust
 host    all             all             127.0.0.1/32            trust
@@ -63,13 +65,12 @@ fi
 
 chown -R postgres:postgres "$PGDATA"
 
-bashio::log.info "Starting PostgreSQL..."
+echo "[postgres] Starting PostgreSQL..."
 su postgres -c "pg_ctl -D \"$PGDATA\" -l \"$PGDATA/logfile\" start"
 
 sleep 2
 
-bashio::log.info "Configuring database and users..."
-
+echo "[postgres] Setting up users..."
 su postgres -c "psql -c \"ALTER USER postgres WITH PASSWORD '${POSTGRES_PASSWORD}';\""
 
 su postgres -c "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='${USERNAME}'\"" | grep -q 1 || \
@@ -82,11 +83,13 @@ su postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname='${DATABASE}
 
 su postgres -c "psql -d ${DATABASE} -c \"GRANT ALL ON SCHEMA public TO ${USERNAME};\""
 
-bashio::log.info "Running init.sql..."
+echo "[postgres] Running init.sql..."
 su postgres -c "psql -d ${DATABASE} -f /init.sql" || true
 
-bashio::log.info "PostgreSQL is ready."
-bashio::log.info "Database: ${DATABASE}"
-bashio::log.info "Username: ${USERNAME}"
+echo "==================================="
+echo "PostgreSQL is ready"
+echo "Database: ${DATABASE}"
+echo "Username: ${USERNAME}"
+echo "==================================="
 
-tail -f "$PGDATA/logfile"
+exec su postgres -c "pg_ctl -D \"$PGDATA\" -l \"$PGDATA/logfile\" -w start && tail -n0 -f \"$PGDATA/logfile\""
