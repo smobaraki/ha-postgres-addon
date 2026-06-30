@@ -92,4 +92,4 @@ echo "Database: ${DATABASE}"
 echo "Username: ${USERNAME}"
 echo "==================================="
 
-exec su postgres -c "pg_ctl -D \"$PGDATA\" -l \"$PGDATA/logfile\" -w start && tail -n0 -f \"$PGDATA/logfile\""
+tail -f "$PGDATA/logfile"
