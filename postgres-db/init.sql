@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS "user" (
 CREATE INDEX IF NOT EXISTS user_full_name_idx
 ON "user" (full_name);
 CREATE INDEX IF NOT EXISTS user_create_ts_brin_idx
-ON user USING brin (create_ts);
+ON "user" USING brin (create_ts);
 
 -- Table comment.
 COMMENT ON TABLE "user" IS
