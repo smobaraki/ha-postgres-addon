@@ -3,3 +3,7 @@ data/
 .idea/
 .vscode/
 *.tar.gz
+.env
+.env.*
+.env.local
+.env.production

@@ -34,5 +34,4 @@ schema:
   external_subnet: str
   max_connections: int
   shared_buffers: str
-map:
-  - share:rw
+
