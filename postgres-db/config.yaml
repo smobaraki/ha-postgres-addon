@@ -6,10 +6,11 @@ description: >-
   connections from other HA addons (e.g. Garmin Sync) and external services
   (e.g. Next.js app on AWS Amplify).
 arch:
-  - armhf
-  - armv7
   - aarch64
   - amd64
+build_from:
+  aarch64: "ghcr.io/home-assistant/aarch64-base:3.21"
+  amd64: "ghcr.io/home-assistant/amd64-base:3.21"
 startup: services
 ports:
   5432/tcp: 5432
