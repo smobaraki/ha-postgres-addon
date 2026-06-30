@@ -1,0 +1,38 @@
+name: "PostgreSQL Database"
+version: "1.0.0"
+slug: "postgres_db"
+description: >-
+  PostgreSQL database addon for Home Assistant. Persists data and allows
+  connections from other HA addons (e.g. Garmin Sync) and external services
+  (e.g. Next.js app on AWS Amplify).
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+startup: services
+ports:
+  5432/tcp: 5432
+ports_description:
+  5432/tcp: "PostgreSQL — accessible from addons via slug hostname, and externally if router port-forwarded"
+options:
+  database: garmin_sync
+  username: garmin_user
+  password: ""
+  postgres_password: ""
+  external_access: false
+  external_subnet: "0.0.0.0/0"
+  max_connections: 100
+  shared_buffers: "128MB"
+schema:
+  database: str
+  username: str
+  password: password
+  postgres_password: password
+  external_access: bool
+  external_subnet: str
+  max_connections: int
+  shared_buffers: str
+map:
+  - share:rw
