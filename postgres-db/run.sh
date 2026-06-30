@@ -86,6 +86,14 @@ su postgres -c "psql -d ${DATABASE} -c \"GRANT ALL ON SCHEMA public TO ${USERNAM
 echo "[postgres] Running init.sql..."
 su postgres -c "psql -d ${DATABASE} -f /init.sql" || true
 
+echo "[postgres] Granting table privileges to ${USERNAME}..."
+su postgres -c "psql -d ${DATABASE}" <<SQL
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${USERNAME};
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ${USERNAME};
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ${USERNAME};
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ${USERNAME};
+SQL
+
 echo "==================================="
 echo "PostgreSQL is ready"
 echo "Database: ${DATABASE}"
