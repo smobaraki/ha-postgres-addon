@@ -10,7 +10,6 @@ arch:
   - armv7
   - aarch64
   - amd64
-  - i386
 startup: services
 ports:
   5432/tcp: 5432

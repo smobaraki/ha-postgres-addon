@@ -13,11 +13,14 @@ SHARED_BUFFERS=$(bashio::config 'shared_buffers')
 
 PGDATA="/data/postgresql"
 
-if [ ! -d "$PGDATA" ]; then
+export PGDATA
+export PATH="/usr/bin:$PATH"
+
+if [ ! -f "$PGDATA/PG_VERSION" ]; then
     bashio::log.info "Initializing PostgreSQL data directory..."
     mkdir -p "$PGDATA"
     chown postgres:postgres "$PGDATA"
-    su - postgres -c "initdb -D $PGDATA"
+    su postgres -c "initdb -D \"$PGDATA\""
 fi
 
 bashio::log.info "Configuring postgresql.conf..."
@@ -58,28 +61,29 @@ host    all             all             172.30.0.0/16           md5
 EOF
 fi
 
+chown -R postgres:postgres "$PGDATA"
+
 bashio::log.info "Starting PostgreSQL..."
-su - postgres -c "pg_ctl -D $PGDATA -l $PGDATA/logfile start"
+su postgres -c "pg_ctl -D \"$PGDATA\" -l \"$PGDATA/logfile\" start"
 
 sleep 2
 
 bashio::log.info "Configuring database and users..."
 
-su - postgres -c "psql -c \"ALTER USER postgres WITH PASSWORD '${POSTGRES_PASSWORD}';\""
+su postgres -c "psql -c \"ALTER USER postgres WITH PASSWORD '${POSTGRES_PASSWORD}';\""
 
-if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='${USERNAME}'\"" | grep -q 1; then
-    su - postgres -c "psql -c \"CREATE USER ${USERNAME} WITH PASSWORD '${PASSWORD}';\""
-fi
+su postgres -c "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='${USERNAME}'\"" | grep -q 1 || \
+    su postgres -c "psql -c \"CREATE USER ${USERNAME} WITH PASSWORD '${PASSWORD}';\""
 
-if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname='${DATABASE}'\"" | grep -q 1; then
-    su - postgres -c "psql -c \"CREATE DATABASE ${DATABASE} OWNER ${USERNAME};\""
-    su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE ${DATABASE} TO ${USERNAME};\""
-fi
+su postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname='${DATABASE}'\"" | grep -q 1 || {
+    su postgres -c "psql -c \"CREATE DATABASE ${DATABASE} OWNER ${USERNAME};\""
+    su postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE ${DATABASE} TO ${USERNAME};\""
+}
 
-su - postgres -c "psql -d ${DATABASE} -c \"GRANT ALL ON SCHEMA public TO ${USERNAME};\""
+su postgres -c "psql -d ${DATABASE} -c \"GRANT ALL ON SCHEMA public TO ${USERNAME};\""
 
 bashio::log.info "Running init.sql..."
-su - postgres -c "psql -d ${DATABASE} -f /init.sql" || true
+su postgres -c "psql -d ${DATABASE} -f /init.sql" || true
 
 bashio::log.info "PostgreSQL is ready."
 bashio::log.info "Database: ${DATABASE}"
