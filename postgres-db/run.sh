@@ -86,12 +86,26 @@ su postgres -c "psql -d ${DATABASE} -c \"GRANT ALL ON SCHEMA public TO ${USERNAM
 echo "[postgres] Running init.sql..."
 su postgres -c "psql -d ${DATABASE} -f /init.sql" || true
 
-echo "[postgres] Granting table privileges to ${USERNAME}..."
+echo "[postgres] Granting table privileges and ownership to ${USERNAME}..."
 su postgres -c "psql -d ${DATABASE}" <<SQL
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${USERNAME};
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ${USERNAME};
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ${USERNAME};
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ${USERNAME};
+ALTER DEFAULT PRIVILEGES FOR ROLE ${USERNAME} IN SCHEMA public GRANT ALL ON TABLES TO ${USERNAME};
+ALTER DEFAULT PRIVILEGES FOR ROLE ${USERNAME} IN SCHEMA public GRANT ALL ON SEQUENCES TO ${USERNAME};
+DO \$\$
+DECLARE
+  r record;
+BEGIN
+  FOR r IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tableowner='postgres' LOOP
+    EXECUTE 'ALTER TABLE ' || quote_ident(r.tablename) || ' OWNER TO ${USERNAME}';
+  END LOOP;
+  FOR r IN SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema='public' LOOP
+    EXECUTE 'ALTER SEQUENCE ' || quote_ident(r.sequence_name) || ' OWNER TO ${USERNAME}';
+  END LOOP;
+END
+\$\$;
 SQL
 
 echo "==================================="

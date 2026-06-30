@@ -5,6 +5,7 @@ RUN apk add --no-cache \
     --repository=https://dl-cdn.alpinelinux.org/alpine/v3.21/community \
     postgresql16 \
     postgresql16-client \
+    postgresql16-contrib \
     jq
 
 RUN mkdir -p /var/lib/postgresql /run/postgresql && \
