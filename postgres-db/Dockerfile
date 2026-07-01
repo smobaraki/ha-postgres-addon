@@ -14,7 +14,6 @@ RUN mkdir -p /var/lib/postgresql /run/postgresql && \
 ENV PGDATA=/data/postgresql
 
 COPY run.sh /
-COPY init.sql /init.sql
 RUN chmod a+x /run.sh
 
 EXPOSE 5432

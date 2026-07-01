@@ -1,5 +1,5 @@
 name: "PostgreSQL Database"
-version: "1.0.0"
+version: "1.0.1"
 slug: "postgres_db"
 init: false
 description: >-
