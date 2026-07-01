@@ -56,6 +56,6 @@ process.on("SIGTERM", async () => {
   process.exit(0)
 })
 
-app.listen(PORT, "127.0.0.1", () => {
-  console.log(`API proxy listening on 127.0.0.1:${PORT}`)
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`API proxy listening on 0.0.0.0:${PORT}`)
 })
