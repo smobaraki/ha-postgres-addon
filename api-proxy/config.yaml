@@ -1,0 +1,22 @@
+name: "PostgreSQL API Proxy"
+version: "1.0.0"
+slug: "api_proxy"
+init: false
+description: >-
+  HTTP API proxy for PostgreSQL. Accepts parameterized SQL queries via POST
+  /query and returns JSON rows. Designed for secure access through Cloudflare
+  Tunnel — allows Next.js on Amplify to query your local PostgreSQL database
+  without VPN or port forwarding.
+arch:
+  - aarch64
+  - amd64
+startup: services
+boot: auto
+hassio_api: false
+homeassistant_api: false
+options:
+  database_url: ""
+  api_key: ""
+schema:
+  database_url: str
+  api_key: password
